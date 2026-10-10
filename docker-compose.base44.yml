@@ -1,0 +1,33 @@
+# Development environment for the Base44 sandbox.
+#
+# This project is a plain static site (index.html / styles.css / scripts.js /
+# imagens/). There is no build step and no backend, so a single service serves
+# the repo's source directly with a live-reloading static dev server.
+#
+# The repo root is bind-mounted, so edits to HTML/CSS/JS are picked up on
+# refresh (and pushed to the browser by live-server's reload script).
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command:
+      - sh
+      - -ec
+      - exec npx --yes live-server@1.2.2 --port=3000 --host=0.0.0.0 --no-browser --wait=150 /app
+    ports:
+      - "3000:3000"
+    volumes:
+      # Live source, not a prebuilt bundle.
+      - .:/app
+      # Keeps the npm download cache across container recreations.
+      - npm_cache:/root/.npm
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  npm_cache:
